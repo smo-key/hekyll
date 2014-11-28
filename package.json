@@ -1,6 +1,6 @@
 {
-  "name": "heckle",
-  "version":"0.1.0",
+  "name": "heckle-blog",
+  "version":"0.1.1",
   "main": "heckle.js",
   "description": "Static webpage generator",
   "licenses": [{"type": "MIT",
@@ -12,7 +12,7 @@
                    "codemirror": "git+https://github.com/marijnh/CodeMirror.git",
                    "mold-template": "1.x.x"},
   "bugs": "http://github.com/smo-key/heckle/issues",
-  "keywords": ["Jekyll", "Blog"],
+  "keywords": ["Jekyll", "Blog", "Heckle"],
   "homepage": "https://github.com/smo-key/heckle",
   "author": "Arthur Pachachura <pachachura.arthur@gmail.com> / Original heckle: Marijn Haverbeke <marijnh@gmail.com>",
   "repositories": [{"type": "git", "url": "https://github.com/smo-key/heckle.git"}]
