@@ -1,19 +1,19 @@
 {
-  "name": "heckle-blog",
+  "name": "heckle",
   "version":"0.1.0",
   "main": "heckle.js",
-  "description": "Static blog generator",
+  "description": "Static webpage generator",
   "licenses": [{"type": "MIT",
-                "url": "https://raw.github.com/marijnh/heckle/master/LICENSE"}],
+                "url": "https://raw.github.com/smo-key/heckle/master/LICENSE"}],
   "dependencies": {"dateformat": "1.x.x",
                    "marked": "0.2.x",
                    "rimraf": "2.x.x",
                    "js-yaml": "1.x.x",
                    "codemirror": "git+https://github.com/marijnh/CodeMirror.git",
                    "mold-template": "1.x.x"},
-  "bugs": "http://github.com/marijnh/heckle/issues",
+  "bugs": "http://github.com/smo-key/heckle/issues",
   "keywords": ["Jekyll", "Blog"],
-  "homepage": "https://github.com/marijnh/heckle",
-  "author": "Marijn Haverbeke <marijnh@gmail.com>",
-  "repositories": [{"type": "git", "url": "https://github.com/marijnh/heckle.git"}]
+  "homepage": "https://github.com/smo-key/heckle",
+  "author": "Arthur Pachachura <pachachura.arthur@gmail.com> / Original heckle: Marijn Haverbeke <marijnh@gmail.com>",
+  "repositories": [{"type": "git", "url": "https://github.com/smo-key/heckle.git"}]
 }
