@@ -158,4 +158,4 @@ function generate() {
   walkDir("./");
 }
 
-generate();
+exports.generate = generate;
