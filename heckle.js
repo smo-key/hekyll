@@ -77,7 +77,11 @@ function gatherTags(posts) {
 }
 
 var defaults = {
-  postLink: "${name}.html"
+  postLink: "${name}.html",
+  postsDir: "_posts/",
+  layoutsDir: "_layouts/",
+  includesDir: "_includes/",
+  siteDir: "_site/"
 };
 
 function readConfig() {
@@ -101,19 +105,19 @@ function ensureDirectories(path) {
   }
 }
 
-function prepareIncludes(ctx) {
-  if (!util.exists("_includes/", true)) return;
+function prepareIncludes(ctx, config) {
+  if (!util.exists(config.includesDir, true)) return;
   fs.readdirSync("_includes/").forEach(function(file) {
     Mold.define(file.match(/^(.*?)\.[^\.]+$/)[1],
-                Mold.bake(fs.readFileSync("_includes/" + file, "utf8"), ctx));
+                Mold.bake(fs.readFileSync(config.includesDir + file, "utf8"), ctx));
   });
 }
 
 var layouts = {};
-function getLayout(name, ctx) {
+function getLayout(name, ctx, config) {
   if (name.indexOf(".") == -1) name = name + ".html";
   if (layouts.hasOwnProperty(name)) return layouts[name];
-  var tmpl = Mold.bake(fs.readFileSync("_layouts/" + name, "utf8"), ctx);
+  var tmpl = Mold.bake(fs.readFileSync(config.layoutsDir + name, "utf8"), ctx);
   tmpl.filename = name;
   layouts[name] = tmpl;
   return tmpl;
@@ -123,11 +127,11 @@ function generate() {
   var config = readConfig(), posts = readPosts(config);
   var ctx = {site: {posts: posts, tags: gatherTags(posts), config: config},
              dateFormat: require("dateformat")};
-  prepareIncludes(ctx);
-  if (util.exists("_site", true)) rmrf.sync("_site");
+  prepareIncludes(ctx, config);
+  if (util.exists(config.siteDir, true)) rmrf.sync(config.siteDir);
   posts.forEach(function(post) {
     if (post.isLink) return;
-    var path = "_site/" + post.url;
+    var path = config.siteDir + post.url;
     ensureDirectories(path);
     fs.writeFileSync(path, getLayout(post.layout || "post.html", ctx)(post), "utf8");
   });
@@ -138,12 +142,12 @@ function generate() {
       if (fs.statSync(file).isDirectory()) {
         walkDir(file + "/");
       } else {
-        var out = "_site/" + file;
+        var out = config.siteDir + file;
         ensureDirectories(out);
         if (/\.md$/.test(fname) && hasFrontMatter(file)) {
           var split = readFrontMatter(fs.readFileSync(file, "utf8"));
           var doc = split.front;
-          var layout = getLayout(doc.layout || "default.html", ctx);
+          var layout = getLayout(doc.layout || "default.html", ctx, config);
           doc.content = marked(split.main);
           doc.name = fname.match(/^(.*?)\.[^\.]+$/)[1];
           doc.url = file;
