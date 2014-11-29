@@ -2,7 +2,7 @@ var fs = require("fs");
 var rmrf = require("rimraf");
 var yaml = require("js-yaml");
 var marked = require("marked");
-var Mold = require("mold-template");
+var Mold = require("hekyll-mold");
 var util = require("./util");
 CodeMirror = require("codemirror/addon/runmode/runmode.node.js");
 
@@ -84,8 +84,8 @@ var defaults = {
   siteDir: "_site/"
 };
 
-function readConfig() {
-  var config = (util.exists("_config.yml") && yaml.load(fs.readFileSync("_config.yml", "utf8"))) || {};
+function readConfig(filename) {
+  var config = (util.exists(filename) && yaml.load(fs.readFileSync(filename, "utf8"))) || {};
   for (var opt in defaults) if (defaults.hasOwnProperty(opt) && !config.hasOwnProperty(opt))
     config[opt] = defaults[opt];
   return config;
@@ -123,8 +123,11 @@ function getLayout(name, ctx, config) {
   return tmpl;
 }
 
-function generate() {
-  var config = readConfig(), posts = readPosts(config);
+function generate(basedir) {
+  var base = "";
+  var configdir = "_config.yml";
+  if (arguments.length >= 1) { base = basedir; configname = base + "_config.yml"; }
+  var config = readConfig(configdir), posts = readPosts(config);
   var ctx = {site: {posts: posts, tags: gatherTags(posts), config: config},
              dateFormat: require("dateformat")};
   prepareIncludes(ctx, config);
