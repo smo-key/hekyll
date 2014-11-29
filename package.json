@@ -1,19 +1,44 @@
 {
   "name": "hekyll",
-  "version":"0.1.2",
+  "version": "0.1.2",
   "main": "hekyll.js",
   "description": "Jekyll port to NodeJS",
-  "licenses": [{"type": "MIT",
-                "url": "https://raw.github.com/smo-key/hekyll/master/LICENSE"}],
-  "dependencies": {"dateformat": "1.x.x",
-                   "marked": "0.2.x",
-                   "rimraf": "2.x.x",
-                   "js-yaml": "1.x.x",
-                   "codemirror": "git+https://github.com/marijnh/CodeMirror.git",
-                   "hekyll-mold": "git+https://github.com/smo-key/hekyll-mold.git"},
-  "bugs": "http://github.com/smo-key/hekyll/issues",
-  "keywords": ["Jekyll", "Blog", "Hekyll"],
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://raw.github.com/smo-key/hekyll/master/LICENSE"
+    }
+  ],
+  "dependencies": {
+    "dateformat": "1.x.x",
+    "marked": "0.2.x",
+    "rimraf": "2.x.x",
+    "js-yaml": "1.x.x",
+    "codemirror": "git+https://github.com/marijnh/CodeMirror.git",
+    "hekyll-mold": "git+https://github.com/smo-key/hekyll-mold.git"
+  },
+  "bugs": {
+    "url": "http://github.com/smo-key/hekyll/issues"
+  },
+  "keywords": [
+    "Jekyll",
+    "Blog",
+    "Hekyll"
+  ],
   "homepage": "https://github.com/smo-key/hekyll",
-  "author": "Arthur Pachachura <pachachura.arthur@gmail.com>",
-  "repository": {"type": "git", "url": "https://github.com/smo-key/hekyll.git"}
+  "author": {
+    "name": "Arthur Pachachura",
+    "email": "pachachura.arthur@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/smo-key/hekyll.git"
+  },
+  "gitHead": "2a3e6ee2f4fc11ea4f28a8fb060741ff4f2adc09",
+  "readme": "# Heckle\n\nA minimal [Jekyll][1] clone in node.js.\n\n[1]: https://github.com/mojombo/jekyll\n\n## Why?\n\nI like the approach to managing a site taken by Jekyll. A lot.\n\nI don't like Ruby, and I don't like strict logic-less templates.\nJekyll is Ruby with Liquid as the templating engine.\n\nHeckle is JavaScript with Mold (programmable template extravaganza) as\nthe templating engine.\n\n## Setup\n\nDon't use Heckle at this point if you want something stable and\nfinished. It's a work in progress, and may be radically changed or\npitilessly abandoned at any time.\n\nIf that didn't scare you off, you should be able to get dependencies\nwith `npm install`.\n\nWhen the dependencies have been installed, you should be able to\nchange to the directory that contains your blog files, and run...\n\n    nodejs /path/to/heckle/heckle.js\n\nIt parses a `_config.yml` and treats `_posts`, `_layouts`, and\n`_includes` dirs much like [Jekyll][1]. Your templates should be in\n[Mold][3] syntax and read `$arg` rather than `post` or `page` to get\ncontext information.\n\n[3]: http://marijnhaverbeke.nl/mold/\n\nAt some point, more detailed docs, as well as commmand-line arguments,\nmight materialize. For now, read the code, it's (at the time of\nwriting) less than 200 lines.\n",
+  "readmeFilename": "README.md",
+  "_id": "hekyll@0.1.2",
+  "_shasum": "95376966edbc733aec41cb8d572a9c9098b6a1ad",
+  "_from": "../../../../tmp/npm-13019-3505542b/1417231166408-0.08138066646642983/2a3e6ee2f4fc11ea4f28a8fb060741ff4f2adc09",
+  "_resolved": "git+https://github.com/smo-key/heckle.git#2a3e6ee2f4fc11ea4f28a8fb060741ff4f2adc09"
 }

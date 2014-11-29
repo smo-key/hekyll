@@ -40,7 +40,7 @@ function readFrontMatter(file) {
   return {front: {}, main: file};
 }
 
-function readPosts(config) {
+function readPosts() {
   var posts = [];
   fs.readdirSync("_posts/").forEach(function(file) {
     var d = file.match(/^(\d{4})-(\d\d?)-(\d\d?)-(.+)\.(md|link)$/);
@@ -53,7 +53,7 @@ function readPosts(config) {
     if (!post.tags.forEach && post.tags.split) post.tags = post.tags.split(/\s+/);
     if (d[5] == "md") {
       post.content = marked(split.main);
-      post.url = getURL(config, post);
+      post.url = getURL(post);
     } else if (d[5] == "link") {
       var escd = Mold.escapeHTML(post.url);
       post.content = "<p>Read this post at <a href=\"" + escd + "\">" + escd + "</a>.</p>";
@@ -84,6 +84,7 @@ var defaults = {
   siteDir: "_site/"
 };
 
+var config;
 function readConfig(filename) {
   var config = (util.exists(filename) && yaml.load(fs.readFileSync(filename, "utf8"))) || {};
   for (var opt in defaults) if (defaults.hasOwnProperty(opt) && !config.hasOwnProperty(opt))
@@ -91,7 +92,7 @@ function readConfig(filename) {
   return config;
 }
 
-function getURL(config, post) {
+function getURL(post) {
   var link = config.postLink;
   for (var prop in post) link = link.replace("${" + prop + "}", post[prop]);
   return link;
@@ -105,7 +106,7 @@ function ensureDirectories(path) {
   }
 }
 
-function prepareIncludes(ctx, config) {
+function prepareIncludes(ctx) {
   if (!util.exists(config.includesDir, true)) return;
   fs.readdirSync("_includes/").forEach(function(file) {
     Mold.define(file.match(/^(.*?)\.[^\.]+$/)[1],
@@ -114,7 +115,7 @@ function prepareIncludes(ctx, config) {
 }
 
 var layouts = {};
-function getLayout(name, ctx, config) {
+function getLayout(name, ctx) {
   if (name.indexOf(".") == -1) name = name + ".html";
   if (layouts.hasOwnProperty(name)) return layouts[name];
   var tmpl = Mold.bake(fs.readFileSync(config.layoutsDir + name, "utf8"), ctx);
@@ -123,14 +124,15 @@ function getLayout(name, ctx, config) {
   return tmpl;
 }
 
-function generate(basedir) {
+function generate() {
   var base = "";
-  var configdir = "_config.yml";
-  if (arguments.length >= 1) { base = basedir; configname = base + "_config.yml"; }
-  var config = readConfig(configdir), posts = readPosts(config);
+  var configdir = "./_config.yml";
+  if (arguments.length >= 1) { base = arguments[0]; configdir = base + "_config.yml"; }
+  config = readConfig(configdir);  
+  var posts = readPosts();
   var ctx = {site: {posts: posts, tags: gatherTags(posts), config: config},
              dateFormat: require("dateformat")};
-  prepareIncludes(ctx, config);
+  prepareIncludes(ctx);
   if (util.exists(config.siteDir, true)) rmrf.sync(config.siteDir);
   posts.forEach(function(post) {
     if (post.isLink) return;
@@ -138,6 +140,7 @@ function generate(basedir) {
     ensureDirectories(path);
     fs.writeFileSync(path, getLayout(post.layout || "post.html", ctx)(post), "utf8");
   });
+  
   function walkDir(dir) {
     fs.readdirSync(dir).forEach(function(fname) {
       if (/^[_\.]/.test(fname)) return;
@@ -150,7 +153,7 @@ function generate(basedir) {
         if (/\.md$/.test(fname) && hasFrontMatter(file)) {
           var split = readFrontMatter(fs.readFileSync(file, "utf8"));
           var doc = split.front;
-          var layout = getLayout(doc.layout || "default.html", ctx, config);
+          var layout = getLayout(doc.layout || "default.html", ctx);
           doc.content = marked(split.main);
           doc.name = fname.match(/^(.*?)\.[^\.]+$/)[1];
           doc.url = file;
