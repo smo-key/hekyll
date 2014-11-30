@@ -19,7 +19,7 @@ function highlightCode(code, lang) {
   if (!CodeMirror.modes.hasOwnProperty(lang)) {
     try { require("codemirror/mode/" + lang + "/" + lang); }
     catch(e) { console.log(e.toString());CodeMirror.modes[lang] = false; }
-  }p
+  }
   if (CodeMirror.modes[lang]) {
     var html = "";
     CodeMirror.runMode(code, lang, function(token, style) {
