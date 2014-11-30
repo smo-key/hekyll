@@ -4,6 +4,7 @@ var yaml = require("js-yaml");
 var marked = require("marked");
 var Mold = require("hekyll-mold");
 var util = require("./util");
+var execFile = require('child_process').execFile;
 CodeMirror = require("codemirror/addon/runmode/runmode.node.js");
 
 marked.setOptions({highlight: highlightCode, gfm: true});
@@ -40,6 +41,128 @@ function readFrontMatter(file) {
   return {front: {}, main: file};
 }
 
+var defaults = {
+  postLink: "${name}.html",
+  siteDir: "_site/",
+  parse: [ "css/", "js/", "fonts/", "./*.html" ],
+  include: [ "fonts/", "pub/", "img/", "favicon.ico" ],
+  includetype: copy,
+  exclude: [ "*.node.js" ]
+};
+var config;
+
+function readConfig(filename) {
+  var config = (util.exists(filename) && yaml.load(fs.readFileSync(filename, "utf8"))) || {};
+  for (var opt in defaults) if (defaults.hasOwnProperty(opt) && !config.hasOwnProperty(opt))
+    config[opt] = defaults[opt];
+  return config;
+}
+
+function checkExcluded(file)
+{
+  return config.exclude(function(exc){
+    if (file.match(exp)) { return false; }
+  });
+}
+
+function parseFile(file)
+{
+  var ext = path.extname(file);
+  switch(ext)
+  {
+    case ".css":
+      //CSS Compression
+      new compressor.minify({
+        type: 'sqwish',
+        fileIn: file,
+        fileOut: config.siteDir + file,
+        callback: function(err, min){
+            if (err) { console.error("CSS  :" + err); }
+            else { console.log("CSS  : Compressed " + file); }
+        }
+      });
+      break;
+
+    case ".sass":
+    case ".scss":
+      //SASS file parsing
+      //search for main file by looknig for front matter (---)
+      var filedir = inc + file;
+      if (vars.hasFrontMatter(filedir))
+      {
+        //remove the front matter if found to prevent error then read SASS
+        fs.readFile(filedir, "utf8", function(error, data) {
+          var dat = data.substringFromLast("---\r\n");
+          if (!dat) { dat = data.substringFromLast("---\n");}
+          sass.renderFile({
+            data: dat,
+            outFile: vars.outputPath + vars.sassPath + s(file).replace(".scss", ".css").replace(".sass", ".css"),
+            success: function(css) {
+                console.log("SASS : Parsed " + filedir);
+            },
+            error: function(error) {
+                console.error("SASS : " + error);
+            },
+            includePaths: config.parse,
+            //imagePath: vars.imagePath,
+            outputStyle: 'compressed'
+          });
+        });
+      }
+      break;
+
+    case ".js":
+      new compressor.minify({
+        type: 'uglifyjs',
+        fileIn: file,
+        fileOut: config.siteDir + file,
+        callback: function(err, min){
+            if (err) { console.error("JS   :" + err); }
+            else { console.log("JS   : Compressed " + file); }
+        }
+      });
+      break;
+
+    default:
+      return;
+  } //switch
+}
+
+function parse() {
+//Clean dirs
+rmdir.sync(config.siteDir, function(error){ if(error) { throw(error); }});
+fs.mkdirSync(config.siteDir, function(error){ if(error) { throw(error); }});
+config.parse.forEach(function(dir) {
+  if (dir.contains("/") || dir.contains("\\"))
+  {
+    fs.mkdirSync(config.siteDir + dir, function(error){ if(error) { throw(error); }});
+  }
+});
+config.include.forEach(function(dir) {
+  if (dir.contains("/") || dir.contains("\\"))
+  {
+    fs.mkdirSync(config.siteDir + dir, function(error){ if(error) { throw(error); }});
+  }
+});
+
+//Parse dirs, performing actions on parsed files
+execFile('find', config.parse, function(err, stdout, stderr) {
+  if(err) throw err;
+  var files = stdout.split('\n');
+  files.forEach(function(file){
+    //check if it's part of excluded types
+    if (!checkExcluded(file))
+    {
+      parseFile(file);
+    } //checkExcluded
+  }); //files.forEach
+}); //execFile
+}
+
+function include() {
+
+}
+
 function readPosts() {
   var posts = [];
   fs.readdirSync("_posts/").forEach(function(file) {
@@ -74,22 +197,6 @@ function gatherTags(posts) {
     else post.tags = [];
   });
   return tags;
-}
-
-var defaults = {
-  postLink: "${name}.html",
-  postsDir: "_posts/",
-  layoutsDir: "_layouts/",
-  includesDir: "_includes/",
-  siteDir: "_site/"
-};
-
-var config;
-function readConfig(filename) {
-  var config = (util.exists(filename) && yaml.load(fs.readFileSync(filename, "utf8"))) || {};
-  for (var opt in defaults) if (defaults.hasOwnProperty(opt) && !config.hasOwnProperty(opt))
-    config[opt] = defaults[opt];
-  return config;
 }
 
 function getURL(post) {
@@ -168,4 +275,5 @@ function generate() {
   walkDir("./");
 }
 
+exports.parse = parse;
 exports.generate = generate;
