@@ -49,10 +49,10 @@ function readFrontMatter(file) {
 var defaults = {
   postLink: "${name}.html",
   siteDir: "_site/",
-  parse: [ "css/", "js/", "fonts/", "./*.html" ],
-  include: [ "fonts/", "pub/", "img/", "favicon.ico" ],
+  parse: [ "css/", "js/", "." ],
+  include: [ "img/", "favicon.ico" ],
   includetype: "copy",
-  exclude: [ "*.node.js" ]
+  exclude: [ ]
 };
 var config;
 
@@ -194,7 +194,58 @@ function parse() {
 }
 
 function include() {
+  execFile('find', config.include, function(err, stdout, stderr) {
+    if(err) console.warn("CFG  : " + err);
+    var files = stdout.split('\n');
+    files.forEach(function(file){
 
+      fs.stat(file, function(err, stat) {
+        if(err != null) {
+          if(err.code == 'ENOENT') {
+            console.log("INC  : \'" + file + "\' does not exist");
+          } else { throw err; }
+        }
+        else {
+          var isdir = stat.isDirectory();
+          switch(config.includetype)
+          {
+            case "copy":
+              if (isdir) {
+                try {
+                  fs.mkdirSync(config.siteDir + file, function(error){ if(error) { throw(error); }});
+                } catch (e)
+                {
+                  if (e.code === "EEXIST") { break; }
+                  throw e;
+                }
+              }
+              else {
+                util.copyFileSync(file, config.siteDir + file, function(error){ if(error) { throw(error); }});
+                console.log("INC  : Copied " + file);
+              }
+              break;
+
+            case "link":
+              if (isdir) {
+                fs.mkdirSync(config.siteDir + file, function(error){ if(error) { throw(error); }});
+              }
+              else {
+                // TODO link
+              }
+              break;
+
+            case "serve":
+              // TODO do we want this?
+              break;
+
+            default:
+              log.warn("CFG  : Config includetype must be one of the following: copy, link, or serve");
+              break;
+          } //switch
+        } //file exists
+      }); //stat
+    }); //forEach
+  }); //execFile
 }
 
 function readPosts() {
@@ -311,3 +362,4 @@ function generate() {
 
 exports.parse = parse;
 exports.generate = generate;
+exports.include = include;
