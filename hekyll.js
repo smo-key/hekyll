@@ -5,6 +5,11 @@ var marked = require("marked");
 var Mold = require("hekyll-mold");
 var util = require("./util");
 var execFile = require('child_process').execFile;
+var path = require("path");
+var compressor = require("node-minify");
+var sass = require("node-sass");
+var s = require("string");
+var async = require("async");
 CodeMirror = require("codemirror/addon/runmode/runmode.node.js");
 
 marked.setOptions({highlight: highlightCode, gfm: true});
@@ -14,7 +19,7 @@ function highlightCode(code, lang) {
   if (!CodeMirror.modes.hasOwnProperty(lang)) {
     try { require("codemirror/mode/" + lang + "/" + lang); }
     catch(e) { console.log(e.toString());CodeMirror.modes[lang] = false; }
-  }
+  }p
   if (CodeMirror.modes[lang]) {
     var html = "";
     CodeMirror.runMode(code, lang, function(token, style) {
@@ -46,7 +51,7 @@ var defaults = {
   siteDir: "_site/",
   parse: [ "css/", "js/", "fonts/", "./*.html" ],
   include: [ "fonts/", "pub/", "img/", "favicon.ico" ],
-  includetype: copy,
+  includetype: "copy",
   exclude: [ "*.node.js" ]
 };
 var config;
@@ -58,11 +63,19 @@ function readConfig(filename) {
   return config;
 }
 
+function subcheckExcluded(cb, file) {
+  config.exclude.forEach(function(exp)
+  {
+    if (file.match(exp)) { console.log("IGN  : Ignored " + file); cb = false; }
+  });
+  return cb;
+}
+
 function checkExcluded(file)
 {
-  return config.exclude(function(exc){
-    if (file.match(exp)) { return false; }
-  });
+  var included = true;
+  var sresult = subcheckExcluded(included, file);
+  return !sresult;
 }
 
 function parseFile(file)
@@ -87,18 +100,17 @@ function parseFile(file)
     case ".scss":
       //SASS file parsing
       //search for main file by looknig for front matter (---)
-      var filedir = inc + file;
-      if (vars.hasFrontMatter(filedir))
+      if (hasFrontMatter(file))
       {
         //remove the front matter if found to prevent error then read SASS
-        fs.readFile(filedir, "utf8", function(error, data) {
+        fs.readFile(file, "utf8", function(error, data) {
           var dat = data.substringFromLast("---\r\n");
           if (!dat) { dat = data.substringFromLast("---\n");}
           sass.renderFile({
             data: dat,
-            outFile: vars.outputPath + vars.sassPath + s(file).replace(".scss", ".css").replace(".sass", ".css"),
+            outFile: (config.siteDir + file).replace(".scss", ".css").replace(".sass", ".css"),
             success: function(css) {
-                console.log("SASS : Parsed " + filedir);
+                console.log("SASS : Parsed " + file);
             },
             error: function(error) {
                 console.error("SASS : " + error);
@@ -129,34 +141,56 @@ function parseFile(file)
 }
 
 function parse() {
-//Clean dirs
-rmdir.sync(config.siteDir, function(error){ if(error) { throw(error); }});
-fs.mkdirSync(config.siteDir, function(error){ if(error) { throw(error); }});
-config.parse.forEach(function(dir) {
-  if (dir.contains("/") || dir.contains("\\"))
-  {
-    fs.mkdirSync(config.siteDir + dir, function(error){ if(error) { throw(error); }});
-  }
-});
-config.include.forEach(function(dir) {
-  if (dir.contains("/") || dir.contains("\\"))
-  {
-    fs.mkdirSync(config.siteDir + dir, function(error){ if(error) { throw(error); }});
-  }
-});
+  //Prepare
+  var base = "";
+  var configdir = "./_config.yml";
+  if (arguments.length >= 1) { base = arguments[0]; configdir = base + "_config.yml"; }
+  config = readConfig(configdir);
 
-//Parse dirs, performing actions on parsed files
-execFile('find', config.parse, function(err, stdout, stderr) {
-  if(err) throw err;
-  var files = stdout.split('\n');
-  files.forEach(function(file){
-    //check if it's part of excluded types
-    if (!checkExcluded(file))
+  //Clean dirs
+  rmrf.sync(config.siteDir, function(error){ if(error) { throw(error); }});
+  fs.mkdirSync(config.siteDir, function(error){ if(error) { throw(error); }});
+  config.parse.forEach(function(dir) {
+    if ((dir.contains("/") || dir.contains("\\")) && (!dir.contains(".")))
     {
-      parseFile(file);
-    } //checkExcluded
-  }); //files.forEach
-}); //execFile
+      try {
+      fs.mkdirSync(config.siteDir + dir, function(error){ if(error) { throw(error); }});
+      } catch (e) {
+        if (e.code === 'EEXIST') {
+          console.warn("CFG  : Config 'parse' key contains duplicate " + dir);
+        } else {
+          throw e;
+        }
+      }
+    }
+  });
+  config.include.forEach(function(dir) {
+    if ((dir.contains("/") || dir.contains("\\")) && (!dir.contains(".")))
+    {
+      try {
+      fs.mkdirSync(config.siteDir + dir, function(error){ if(error) { throw(error); }});
+      } catch (e) {
+        if (e.code === 'EEXIST') {
+          console.warn("CFG  : Config 'include' key contains duplicate " + dir);
+        } else {
+          throw e;
+        }
+      }
+    }
+  });
+
+  //Parse dirs, performing actions on parsed files
+  execFile('find', config.parse, function(err, stdout, stderr) {
+    if(err) console.warn("CFG  : " + err);
+    var files = stdout.split('\n');
+    files.forEach(function(file){
+      //check if it's part of excluded types
+      if (!checkExcluded(file))
+      {
+        parseFile(file);
+      } //checkExcluded
+    }); //files.forEach
+  }); //execFile
 }
 
 function include() {
