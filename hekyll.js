@@ -10,6 +10,7 @@ var compressor = require("node-minify");
 var sass = require("node-sass");
 var s = require("string");
 var async = require("async");
+var mu = require("mu2");
 CodeMirror = require("codemirror/addon/runmode/runmode.node.js");
 
 marked.setOptions({highlight: highlightCode, gfm: true});
@@ -19,7 +20,7 @@ function highlightCode(code, lang) {
   if (!CodeMirror.modes.hasOwnProperty(lang)) {
     try { require("codemirror/mode/" + lang + "/" + lang); }
     catch(e) { console.log(e.toString());CodeMirror.modes[lang] = false; }
-  }p
+  }
   if (CodeMirror.modes[lang]) {
     var html = "";
     CodeMirror.runMode(code, lang, function(token, style) {
@@ -56,10 +57,21 @@ var defaults = {
 };
 var config;
 
+var muhash = [  ];    //Mustache hash containing all keys and values
+var mudepends = [  ]; //Mustache dependency tree - contains filenames along with list of other filenames it depends on
+var mucompile = [  ]; //Mustache final compilation order
+
 function readConfig(filename) {
   var config = (util.exists(filename) && yaml.load(fs.readFileSync(filename, "utf8"))) || {};
   for (var opt in defaults) if (defaults.hasOwnProperty(opt) && !config.hasOwnProperty(opt))
     config[opt] = defaults[opt];
+
+  //add each variable (site.NAME) to Mu hash
+  config.forEach(function(value, item) {
+    var str = "site." + item.toString();
+    var array = [ str, value ];
+    muhash.push(array);
+  });
   return config;
 }
 
@@ -83,6 +95,22 @@ function parseFile(file)
   var ext = path.extname(file);
   switch(ext)
   {
+    case ".md":
+      //TODO get markdown content into stream using marked -- continue with .html case
+
+    case ".html":
+      //TODO start by generating the dependency list -- if the front matter contains "usetemplate: NAME" then add it to dependencies
+      //TODO also add anything with {{ template.NAME }} (include {{ and {{&, etc.) into the dependencies list
+
+      //TODO actions for SECOND GENERATION PASS in generate()
+      //TODO GENERATE COMPILE ORDER FROM DEPENDENCY LIST
+      //TODO minimize html if minimize option selected
+      //TODO copy each file in entirety into muhash IF front matter contains "template: NAME" then place into page.NAME -- there's definitely a better way to do this, I've left it alone for now
+      //TODO run Mu on the file, replacing current hashes
+      //TODO clean all variables -- for now, when a change is made everything has to be recompiled
+
+      break;
+
     case ".css":
       //CSS Compression
       new compressor.minify({
